@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Visual Headline Aggregator</title>
+    </head>
+
+    <body onresize="location.reload()">
+        <div id="chart">
+            <svg id="canvas" height="100%" width="100%">
+                
+            </svg>
+        </div>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script>
+
+(function() {
+
+    var svg = d3.select("#canvas")
+        
+    var radiusScale = d3.scaleSqrt().domain([1,50000]).range([40,100])
+    var width = svg.width;
+    var height = svg.height;
+
+    function charge(d)
+    {
+        return Math.pow(d.value/3200, 2.0) * 0.03;
+    }
+
+    data = data.default.rankedList[1].rankedKeyword;
+
+    var bubble = d3.pack().size([600,600]).padding(3);
+
+    var color    = d3.scaleSqrt().domain([1,100]).range(['#000000', '#ffffff']); // d3.scale.category20b();
+
+    function fillcolor(d)
+    {
+        var col = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);//color(d.value));
+        return col;
+    }
+
+var othertooltip = d3.select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+    .style("color", "white")
+    .style("padding", "8px")
+    .style("background-color", "rgba(0, 0, 0, 0.75)")
+    .style("border-radius", "6px")
+    .style("font", "12px sans-serif")
+    .text("tooltip");
+
+    var elem = svg.selectAll("g")
+        .data(data)
+    var elemEnter = elem.enter()
+        .append("g")
+        .attr("transform", function(d){"translate(" + window.innerWidth/2 + "," +  window.innerHeight/2+ ")";})
+
+    var circles = elemEnter.append("circle")
+        .attr("r",function(d){
+            return radiusScale(d.value);
+        })
+        .attr('cx', function(d) {
+            return window.innerWidth/2;
+        })
+        .attr('cy', function(d) {
+            return window.innerHeight/2;
+        })
+        .attr("fill",fillcolor)
+        .attr('id', function(d) { return d.topic.title; })
+        .attr("stroke",fillcolor)
+        .attr("stroke-width", function(d) {return radiusScale(d.value)/10;})
+        .on("mousedown", function(d) {
+              othertooltip.text("Title:" + d.topic.title + "\r\nValue:" + d.value);
+              othertooltip.style("visibility", "visible");
+      })
+      .on("mousemove", function() {
+          return othertooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
+      })
+      .on("mouseout", function(){return othertooltip.style("visibility", "hidden");});
+
+    var texts = elemEnter.append("text")
+        .attr("dy",function(d){
+                d.value;
+            })
+        .attr("font-size",function(d){
+            return "" +radiusScale(d.value)*2.4/d.topic.title.length+"px";
+        })
+        .attr("font-type", "sans-serif")
+        .attr('x', function(d) {
+                return window.innerWidth/2;
+            })
+        .attr('y', function(d) {
+            return (window.innerHeight/2);
+        })
+        .style("text-anchor","middle")
+        .style("pointer-events", "none")
+        .text(function(d){return d.topic.title;})
+
+    function ticked(){
+        circles
+            .attr("cx", function(d){
+                return d.x
+            })
+            .attr("cy", function(d){
+                return d.y
+            })
+        texts
+            .attr("x", function(d){
+                return d.x
+            })
+            .attr("y", function(d){
+                return d.y + radiusScale(d.value)/d.y
+            })
+    }
+
+    d3.pack(circles).size([600,600]).padding(3);
+
+var simulation2 = d3.forceSimulation(data)
+    .velocityDecay(0.2)
+    .force("x", d3.forceX(window.innerWidth/2).strength(0.010))
+    .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
+    .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 5; }).iterations(20))
+    .force('charge', d3.forceManyBody().strength(charge))
+    .on("tick", ticked);
+
+})();
+
+        </script>
+    </body>
+</html>

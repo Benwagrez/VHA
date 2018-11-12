@@ -1,0 +1,15 @@
+---
+engines:
+  # ... CONFIG CONTENT ...
+  eslint:
+    enabled: true
+    config:
+      languages:
+      - javascript
+  fixme:
+    enabled: true
+ratings:
+  paths:
+  - "**.js"
+  - "**.jsx"
+exclude_paths: ["lib", "webpack.config.js", "examples.js"]
