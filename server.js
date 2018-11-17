@@ -4,15 +4,19 @@
 var googleTrends = require('./lib/google-trends-api.min.js');
 var data;
 
-googleTrends.relatedTopics({keyword: 'News'})
+googleTrends.relatedTopics({
+keyword: '*',
+startTime: new Date(new Date().setDate(new Date().getDate() - 30)),
+endTime: new Date(Date.now()),
+geo: 'US',
+category: '1209',
+})
 .then((res) => {
-  console.log(res);
   data = res;
 })
 .catch((err) => {
   console.log(err);
 })
-
 
 /*-----------------HTTP WEB SERVER BELOW--------------------*/
 

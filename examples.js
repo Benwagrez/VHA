@@ -47,13 +47,13 @@ googleTrends.interestOverTime({
 // });
 
 /* ****** Interest over time - Comparing multiple keywords *********/
-// googleTrends.interestOverTime({keyword: ['Valentines Day', 'Christmas Day']})
-// .then((res) => {
-//   console.log('this is res', res);
-// })
-// .catch((err) => {
-//   console.log('got the error', err);
-// })
+googleTrends.interestOverTime({keyword: ['Valentines Day', 'Christmas Day']})
+.then((res) => {
+  console.log('this is res', res);
+})
+.catch((err) => {
+  console.log('got the error', err);
+})
 
 /* ******************* Interest by region **************************/
 

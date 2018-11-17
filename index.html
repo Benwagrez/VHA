@@ -2,129 +2,172 @@
 <html>
     <head>
         <title>Visual Headline Aggregator</title>
+        <style>body {margin: 0;padding: 0;}</style>
     </head>
 
-    <body onresize="location.reload()">
+    <body onresize="location.reload()" margin=0px>
         <div id="chart">
             <svg id="canvas" height="100%" width="100%">
-                
+               <!-- Bubble chart will be implemented here --> 
             </svg>
         </div>
+
+        <!-- Implementing D3 library -->
         <script src="https://d3js.org/d3.v5.min.js"></script>
+
+        <!-- Initializing JS function to create bubble chart -->
         <script>
 
-(function() {
+            (function() {
 
-    var svg = d3.select("#canvas")
-        
-    var radiusScale = d3.scaleSqrt().domain([1,50000]).range([40,100])
-    var width = svg.width;
-    var height = svg.height;
+                
 
-    function charge(d)
-    {
-        return Math.pow(d.value/3200, 2.0) * 0.03;
-    }
+                var pParent; // Variables used in resizing circles -- Prev parent
+                var pChild;  // -- Previous Text
+                var pChildT;  // -- Previous Texts value
+                var pChildTS;  // -- Previous Texts font value
+                var pChildS;  // -- Previous Circle radius value
+                var child;   // -- Current circle
 
-    data = data.default.rankedList[1].rankedKeyword;
+                // DATA FROM GOOGLE-TRENDS-API
+                // SORTED BY RISING, WORLD NEWS, LAST 30 DAYS, U.S
+                // RELATED TOPICS OF QUERY "*"
+                data = data.default.rankedList[1].rankedKeyword; 
 
-    var bubble = d3.pack().size([600,600]).padding(3);
+                // RadiusScale: Radius of Circle based on data value
+                var radiusScale = d3.scaleSqrt().domain([1,100000]).range([40,140])
 
-    var color    = d3.scaleSqrt().domain([1,100]).range(['#000000', '#ffffff']); // d3.scale.category20b();
+                // Color && ColorBorder: colors of circles and their borders based on scheme
+                var color = d3.scaleQuantize().domain([1,20000]).range(['#638CA6','#A3D39C','#17A697','#D4A1D2','#E45F56','#D93240','#F9AC3D','#758C33']); // d3.scale.category20b();
+                var colorBorder = d3.scaleQuantize().domain([1,20000]).range(['#476577','#8EB787','#138C7E','#B285B1','#C6514B','#B72C3A','#E8A34E','#62752B']); // d3.scale.category20b();
 
-    function fillcolor(d)
-    {
-        var col = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);//color(d.value));
-        return col;
-    }
+                // Starting initialization of variables
+                var svg = d3.select("#canvas") // Selecting HTML object SVG canvas
+                var elem = svg.selectAll("g")  // Initializing g HTML with data
+                    .data(data)
+                var elemEnter = elem.enter()   // Appending g: container of circle and text
+                    .append("g")
+                    .attr("transform", function(d){
+                        "translate(" + window.innerWidth/2 + 
+                        "," +  
+                        window.innerHeight/2+ 
+                        ")";
+                    })
+                var circles = elemEnter.append("circle") // Initializing Circles
+                    .attr("r", function(d){ return radiusScale(d.value); })
+                    .attr("value", function(d){ return d.value; })
+                    .attr('cx', function(d) { return window.innerWidth/2; })
+                    .attr('cy', function(d) { return window.innerHeight/2; })
+                    .attr("fill", function(d){ return color(d.value); })
+                    .attr('id', function(d) { return d.topic.title; })
+                    .attr("stroke", function(d){ return colorBorder(d.value); })
+                    .attr("stroke-width", function(d) { return radiusScale(d.value)/10; })
+                    .on("mousedown", function(d) {      // Circle Resize functionality
+                        if(this !== child){
+                            if(typeof pChild  !== "undefined"){
+                                shrinkCircle(d);
+                            }
+                            child = this;
+                            pParent = this.parentNode;
+                            pChild = pParent.children;
+                            pChildT = pChild[1].innerHTML;
+                            pChildTS = pChild[1].getAttribute("font-size");
+                            pChildS = child.getAttribute("value");
+                            growCircle(d);
+                            simulation();
+                        }
+                        else if(typeof pChild  !== "undefined"){
+                            shrinkCircle(d);
+                            child = undefined;
+                            pParent = undefined;
+                            pChild = undefined;
+                            pChildT = undefined;
+                            pChildTS = undefined;
+                            pChildS = undefined;
+                            simulation();
+                        }   
+                    })
+                var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
+                    .attr("class", "circleText")
+                    .attr("font-family", "Segoe UI")
+                    .attr("dy",function(d){ d.value; })
+                    .attr('x', function(d) { return window.innerWidth/2; })
+                    .attr('y', function(d) { return (window.innerHeight/2); })
+                    .attr("font-size",function(d){
+                        return "" +
+                        radiusScale(d.value)/(Math.sqrt(d.topic.title.length)*Math.PI/2) +
+                        "px";
+                    })
+                    .style("text-anchor","middle")
+                    .style("pointer-events", "none")
+                    .text(function(d){return d.topic.title;})
+                    
+                //simulation(); // Starting program ***
 
-var othertooltip = d3.select("body")
-    .append("div")
-    .style("position", "absolute")
-    .style("z-index", "10")
-    .style("visibility", "hidden")
-    .style("color", "white")
-    .style("padding", "8px")
-    .style("background-color", "rgba(0, 0, 0, 0.75)")
-    .style("border-radius", "6px")
-    .style("font", "12px sans-serif")
-    .text("tooltip");
+                var sim = d3.forceSimulation(data)
+                        .velocityDecay(0.2)
+                        .force('charge', d3.forceManyBody().strength(5))
+                        .force("x", d3.forceX((window.innerWidth*1.2)/2).strength(0.010))
+                        .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
+                        .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }))
+                        .on("tick", ticked); 
 
-    var elem = svg.selectAll("g")
-        .data(data)
-    var elemEnter = elem.enter()
-        .append("g")
-        .attr("transform", function(d){"translate(" + window.innerWidth/2 + "," +  window.innerHeight/2+ ")";})
+            /* ~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~ */
 
-    var circles = elemEnter.append("circle")
-        .attr("r",function(d){
-            return radiusScale(d.value);
-        })
-        .attr('cx', function(d) {
-            return window.innerWidth/2;
-        })
-        .attr('cy', function(d) {
-            return window.innerHeight/2;
-        })
-        .attr("fill",fillcolor)
-        .attr('id', function(d) { return d.topic.title; })
-        .attr("stroke",fillcolor)
-        .attr("stroke-width", function(d) {return radiusScale(d.value)/10;})
-        .on("mousedown", function(d) {
-              othertooltip.text("Title:" + d.topic.title + "\r\nValue:" + d.value);
-              othertooltip.style("visibility", "visible");
-      })
-      .on("mousemove", function() {
-          return othertooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
-      })
-      .on("mouseout", function(){return othertooltip.style("visibility", "hidden");});
 
-    var texts = elemEnter.append("text")
-        .attr("dy",function(d){
-                d.value;
-            })
-        .attr("font-size",function(d){
-            return "" +radiusScale(d.value)*2.4/d.topic.title.length+"px";
-        })
-        .attr("font-type", "sans-serif")
-        .attr('x', function(d) {
-                return window.innerWidth/2;
-            })
-        .attr('y', function(d) {
-            return (window.innerHeight/2);
-        })
-        .style("text-anchor","middle")
-        .style("pointer-events", "none")
-        .text(function(d){return d.topic.title;})
+                function shrinkCircle(d){ // To shrink the Circle to original size
+                    d3.select(pChild[1]).transition()
+                        .attr("font-size",function(d){ return pChildTS; })
+                        .text(pChildT);
+                    d3.select(child).transition()
+                        .attr("r", function(d){
+                            d.value = pChildS;
+                            return radiusScale(d.value);
+                        })
+                        .style("cursor", "pointer")          
+                }
 
-    function ticked(){
-        circles
-            .attr("cx", function(d){
-                return d.x
-            })
-            .attr("cy", function(d){
-                return d.y
-            })
-        texts
-            .attr("x", function(d){
-                return d.x
-            })
-            .attr("y", function(d){
-                return d.y + radiusScale(d.value)/d.y
-            })
-    }
+                function growCircle(d){ // To Grow the Circle to enlarged size
+                    d3.select(pChild[1]).transition().duration(600)
+                        .attr("font-size",function(d){
+                            return "" +
+                            window.innerWidth/(Math.sqrt(d.topic.title.length)) +
+                            "px";
+                        })
+                        .text("Test");
+                    d3.select(child).transition().duration(600)
+                        .attr("r", function(d){
+                            d.value = window.innerWidth*800;
+                            return radiusScale(d.value);
+                        })
+                        .style("cursor", "pointer");      
+                }
 
-    d3.pack(circles).size([600,600]).padding(3);
+                function simulation(){ // Moving the circles and grouping them in the middle
+                    
+                    // if(sim != undefined){ sim.stop(); sim.alpha(1).restart(); }
+                    sim
+                        .velocityDecay(0.2)
+                        .force("x", d3.forceX((window.innerWidth)/2).strength(0.075))
+                        .force("y", d3.forceY(window.innerHeight/2).strength(0.175))
+                        .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }).strength(.25))
+                        .alpha(.1)
+                        .restart()
+     
+                }
 
-var simulation2 = d3.forceSimulation(data)
-    .velocityDecay(0.2)
-    .force("x", d3.forceX(window.innerWidth/2).strength(0.010))
-    .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
-    .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 5; }).iterations(20))
-    .force('charge', d3.forceManyBody().strength(charge))
-    .on("tick", ticked);
+                // Level of attraction of circles based on data value
+                function charge(d){ return Math.pow(radiusScale(d.value), 2.0) * 0.03; }
 
-})();
+                function ticked(){ // Dynamic movement of circles to one another
+                    circles
+                        .attr("cx", function(d){ return d.x })
+                        .attr("cy", function(d){ return d.y })
+                    texts
+                        .attr("x", function(d){ return d.x })
+                        .attr("y", function(d){ return d.y + radiusScale(d.value)/d.y })
+                }
+            })();
 
         </script>
     </body>
