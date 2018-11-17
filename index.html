@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>Visual Headline Aggregator</title>
+        <a href="newsapi.org">Powered by Google News API </a>
         <style>body {margin: 0;padding: 0;}</style>
     </head>
 
@@ -14,6 +15,7 @@
 
         <!-- Implementing D3 library -->
         <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="https://d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
 
         <!-- Initializing JS function to create bubble chart -->
         <script>
@@ -28,6 +30,7 @@
                 var pChildTS;  // -- Previous Texts font value
                 var pChildS;  // -- Previous Circle radius value
                 var child;   // -- Current circle
+                var news;   // -- Current news sources for circle
 
                 // DATA FROM GOOGLE-TRENDS-API
                 // SORTED BY RISING, WORLD NEWS, LAST 30 DAYS, U.S
@@ -51,8 +54,9 @@
                         "translate(" + window.innerWidth/2 + 
                         "," +  
                         window.innerHeight/2+ 
-                        ")";
+                        ")";  
                     })
+                    .style("white-space", "pre");
                 var circles = elemEnter.append("circle") // Initializing Circles
                     .attr("r", function(d){ return radiusScale(d.value); })
                     .attr("value", function(d){ return d.value; })
@@ -70,11 +74,25 @@
                             child = this;
                             pParent = this.parentNode;
                             pChild = pParent.children;
-                            pChildT = pChild[1].innerHTML;
-                            pChildTS = pChild[1].getAttribute("font-size");
+                            pChild = pChild[1].children
+                            pChildT = pChild[0].innerHTML;
+                            pChildTS = pChild[0].getAttribute("font-size");
                             pChildS = child.getAttribute("value");
-                            growCircle(d);
-                            simulation();
+                            var url='https://newsapi.org/v2/everything?' +
+                                'q='+pChildT+'&' +
+                                'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
+                                'sortBy=popularity&' +
+                                'apiKey=af2c24b426a34038888bd4e88d263052';
+                            var req = new Request(url);
+                            fetch(req)
+                                .then(response => response.json())
+                                .then(function(post){
+                                    news = post.articles;
+                                    console.log(post.articles);
+                                    growCircle(d);
+                                    simulation();
+                                });
+                            
                         }
                         else if(typeof pChild  !== "undefined"){
                             shrinkCircle(d);
@@ -88,6 +106,7 @@
                         }   
                     })
                 var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
+                    .append("tspan")
                     .attr("class", "circleText")
                     .attr("font-family", "Segoe UI")
                     .attr("dy",function(d){ d.value; })
@@ -99,11 +118,9 @@
                         "px";
                     })
                     .style("text-anchor","middle")
-                    .style("pointer-events", "none")
-                    .text(function(d){return d.topic.title;})
+                    .text(function(d){return d.topic.title;});
                     
-                //simulation(); // Starting program ***
-
+                // Starting program ***
                 var sim = d3.forceSimulation(data)
                         .velocityDecay(0.2)
                         .force('charge', d3.forceManyBody().strength(5))
@@ -116,31 +133,69 @@
 
 
                 function shrinkCircle(d){ // To shrink the Circle to original size
-                    d3.select(pChild[1]).transition()
+                    var textChild = pChild[0];
+                    
+                    d3.selectAll(".temp").remove();
+                    d3.select(textChild).transition().duration(200)
                         .attr("font-size",function(d){ return pChildTS; })
+                        .attr("visibility", "hidden")
                         .text(pChildT);
-                    d3.select(child).transition()
+                    d3.select(child).transition().duration(200)
                         .attr("r", function(d){
                             d.value = pChildS;
                             return radiusScale(d.value);
                         })
-                        .style("cursor", "pointer")          
+                        .style("cursor", "pointer") 
+
+                        setTimeout(function(){ 
+                            d3.select(textChild).transition().duration(2)
+                            .attr("dy", 0)
+                            .attr("visibility", "visible")
+                        },200);         
                 }
 
                 function growCircle(d){ // To Grow the Circle to enlarged size
-                    d3.select(pChild[1]).transition().duration(600)
+
+                    d3.select(pChild[0]).transition().duration(600)
                         .attr("font-size",function(d){
                             return "" +
-                            window.innerWidth/(Math.sqrt(d.topic.title.length)) +
+                            window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) +
                             "px";
                         })
-                        .text("Test");
-                    d3.select(child).transition().duration(600)
+                        .attr("visibility", "hidden")
+        
+                        d3.select(child).transition().duration(600)
                         .attr("r", function(d){
                             d.value = window.innerWidth*800;
                             return radiusScale(d.value);
                         })
-                        .style("cursor", "pointer");      
+                        .style("cursor", "pointer");  
+
+                        setTimeout(function(){ 
+                            d3.select(pChild[0]).transition().duration(2)
+                            .attr("dy", -240)
+                            .attr("visibility", "visible")
+                            d3.select(pChild[0].parentNode).append('tspan')
+                                    .attr("dy", 50)
+                                    .attr("dx", "-" + getTextWidth(pChild[0].innerHTML, 
+                                    window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
+                                    "px Segoe UI"))
+                                    .attr("class","temp")
+                                    .attr("font-family", "Segoe UI")
+                                    .attr("font-size", window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI))
+                                    .text("1. " + news[0].url);
+                            for(var i = 1; i < 10; i++){
+                                d3.select(pChild[0].parentNode).append('tspan')
+                                    .attr("dy", 40)
+                                    .attr("dx", "-" + getTextWidth(pChild[i].innerHTML, 
+                                    window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI) + 
+                                    "px Segoe UI"))
+                                    .attr("class","temp")
+                                    .attr("font-family", "Segoe UI")
+                                    .attr("font-size", window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI))
+                                    .text("" + (i+1) + ". " + news[i].url);
+                            }
+                        },600);    
                 }
 
                 function simulation(){ // Moving the circles and grouping them in the middle
@@ -154,6 +209,15 @@
                         .alpha(.1)
                         .restart()
      
+                }
+
+                function getTextWidth(text, font) {
+                    // re-use canvas object for better performance
+                    var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+                    var context = canvas.getContext("2d");
+                    context.font = font;
+                    var metrics = context.measureText(text);
+                    return metrics.width;
                 }
 
                 // Level of attraction of circles based on data value
