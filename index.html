@@ -1,14 +1,25 @@
 <!DOCTYPE html>
+<!--*  Visual Headline Aggregator  *-->
+<!--*  Made by: Benjamin Wagrez,   *-->
+<!--*  Ashley Jones, Kaitlyn Knabe *-->
+<!--*  Ryan Grunsten               *-->
 <html>
     <head>
         <title>Visual Headline Aggregator</title>
-        <a href="newsapi.org">Powered by Google News API </a>
         <style>body {margin: 0;padding: 0;}</style>
     </head>
 
     <body onresize="location.reload()" margin=0px>
         <div id="chart">
             <svg id="canvas" height="100%" width="100%">
+                <!-- Credit to Google News API as per TOS --> 
+                <a xlink:href="http://www.newsapi.org">
+                    <text font-family="Segoe UI" font-size="10" font-weight="normal">
+                        <tspan x="5" y="20" style="color: #D3D3D3;opacity: 0.25;text-decoration: none;">
+                            Powered by Google News API 
+                        </tspan>
+                    </text>
+                </a>
                <!-- Bubble chart will be implemented here --> 
             </svg>
         </div>
@@ -22,7 +33,8 @@
 
             (function() {
 
-                
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  VARIABLES BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 
                 var pParent; // Variables used in resizing circles -- Prev parent
                 var pChild;  // -- Previous Text
@@ -58,27 +70,27 @@
                     })
                     .style("white-space", "pre");
                 var circles = elemEnter.append("circle") // Initializing Circles
-                    .attr("r", function(d){ return radiusScale(d.value); })
-                    .attr("value", function(d){ return d.value; })
-                    .attr('cx', function(d) { return window.innerWidth/2; })
+                    .attr("r", function(d){ return radiusScale(d.value); }) // Radius
+                    .attr("value", function(d){ return d.value; }) // Value passed over for recall
+                    .attr('cx', function(d) { return window.innerWidth/2; }) 
                     .attr('cy', function(d) { return window.innerHeight/2; })
-                    .attr("fill", function(d){ return color(d.value); })
-                    .attr('id', function(d) { return d.topic.title; })
-                    .attr("stroke", function(d){ return colorBorder(d.value); })
-                    .attr("stroke-width", function(d) { return radiusScale(d.value)/10; })
+                    .attr("fill", function(d){ return color(d.value); }) // Fill color
+                    .attr('id', function(d) { return d.topic.title; }) // Circle ID as topic title
+                    .attr("stroke", function(d){ return colorBorder(d.value); }) // Circle border
+                    .attr("stroke-width", function(d) { return radiusScale(d.value)/10; }) // Circle border width
                     .on("mousedown", function(d) {      // Circle Resize functionality
-                        if(this !== child){
-                            if(typeof pChild  !== "undefined"){
-                                shrinkCircle(d);
+                        if(this !== child){ // Checking if the user clicked on previously selected circle - If not --Below
+                            if(typeof pChild  !== "undefined"){ // Check if there was previous selection
+                                shrinkCircle(d); // If so shrink previous circle
                             }
-                            child = this;
-                            pParent = this.parentNode;
-                            pChild = pParent.children;
-                            pChild = pChild[1].children
-                            pChildT = pChild[0].innerHTML;
-                            pChildTS = pChild[0].getAttribute("font-size");
-                            pChildS = child.getAttribute("value");
-                            var url='https://newsapi.org/v2/everything?' +
+                            child = this; // Assigning variables based on selected circle
+                            pParent = this.parentNode; // -
+                            pChild = pParent.children; // pChild defined twice to identify tspans (text not very important)
+                            pChild = pChild[1].children // -
+                            pChildT = pChild[0].innerHTML; // -
+                            pChildTS = pChild[0].getAttribute("font-size"); // -
+                            pChildS = child.getAttribute("value"); // -
+                            var url='https://newsapi.org/v2/everything?' + // GOOGLE NEWS API DATA PULL HERE
                                 'q='+pChildT+'&' +
                                 'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
                                 'sortBy=popularity&' +
@@ -86,50 +98,61 @@
                             var req = new Request(url);
                             fetch(req)
                                 .then(response => response.json())
-                                .then(function(post){
+                                .then(function(post){ // WAIT FOR DATA: ERROR HERE IF MAX LIMIT REACHED
                                     news = post.articles;
                                     console.log(post.articles);
                                     growCircle(d);
-                                    simulation();
-                                });
-                            
+                                    simulation(); // Simulate to restore circle positions
+                                });  
                         }
-                        else if(typeof pChild  !== "undefined"){
-                            shrinkCircle(d);
-                            child = undefined;
+                        else if(typeof pChild  !== "undefined"){ // if user did click on previous circle --Below
+                            shrinkCircle(d); // Shrink Circle
+                            child = undefined; // Dumping variables
                             pParent = undefined;
                             pChild = undefined;
                             pChildT = undefined;
                             pChildTS = undefined;
                             pChildS = undefined;
-                            simulation();
+                            simulation(); // Simulate to restore circle positions
                         }   
                     })
                 var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
                     .append("tspan")
                     .attr("class", "circleText")
                     .attr("font-family", "Segoe UI")
-                    .attr("dy",function(d){ d.value; })
+                    .attr("dx",function(d){ return "-" + (getTextWidth(d.topic.title, // Disparity in X value, to align texts
+                    radiusScale(d.value)/(Math.sqrt(d.topic.title.length)*Math.PI/2) + 
+                    "px Segoe UI"))/2; })
                     .attr('x', function(d) { return window.innerWidth/2; })
                     .attr('y', function(d) { return (window.innerHeight/2); })
-                    .attr("font-size",function(d){
+                    .attr("font-size",function(d){ // Font-size based on title length and size of circle
                         return "" +
                         radiusScale(d.value)/(Math.sqrt(d.topic.title.length)*Math.PI/2) +
                         "px";
                     })
-                    .style("text-anchor","middle")
-                    .text(function(d){return d.topic.title;});
+                    .text(function(d){return d.topic.title;}); // Title text within circle
                     
-                // Starting program ***
+                // Starting program *** 
                 var sim = d3.forceSimulation(data)
-                        .velocityDecay(0.2)
-                        .force('charge', d3.forceManyBody().strength(5))
-                        .force("x", d3.forceX((window.innerWidth*1.2)/2).strength(0.010))
-                        .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
-                        .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }))
-                        .on("tick", ticked); 
+                    .velocityDecay(0.2)
+                    .force('charge', d3.forceManyBody().strength(5))
+                    .force("x", d3.forceX((window.innerWidth*1.1)/2).strength(0.010))
+                    .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
+                    .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }))
+                    .on("tick", ticked); 
 
-            /* ~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~  Function  ~~~~~~~~~~~~~~~||~~~~~~~~~~~~~~~  Purpose  ~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* ~~~~~~~~~~~~~~~~~~  shrinkCircle                   ||  Taking user input (mousedown) in order to       */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  shrink current enlarged circle                  */
+/* ~~~~~~~~~~~~~~~~~~  growCircle                     ||  Taking user input (mousedown) in order to       */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  grow circle that was selected                   */
+/* ~~~~~~~~~~~~~~~~~~  simulation                     ||  function designed to reset D3 simulation in     */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  order to dynamically resort circles             */
+/* ~~~~~~~~~~~~~~~~~~  getTextWidth                   ||  Returns width text element take up for styling  */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  purposes                                        */
+/* ~~~~~~~~~~~~~~~~~~  Ticked                         ||  Dynamically moves the circles under simulation  */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 
                 function shrinkCircle(d){ // To shrink the Circle to original size
@@ -145,17 +168,22 @@
                             d.value = pChildS;
                             return radiusScale(d.value);
                         })
-                        .style("cursor", "pointer") 
-
                         setTimeout(function(){ 
                             d3.select(textChild).transition().duration(2)
                             .attr("dy", 0)
+                            .attr("dx",function(d){ return "-" + (getTextWidth(d.topic.title, 
+                            radiusScale(d.value)/(Math.sqrt(d.topic.title.length)*Math.PI/2) + 
+                            "px Segoe UI"))/2; })
                             .attr("visibility", "visible")
                         },200);         
                 }
 
                 function growCircle(d){ // To Grow the Circle to enlarged size
 
+                    var prevD = "";
+                    var prevF = 0;
+                    var iDx = 150;
+                    console.log(iDx);
                     d3.select(pChild[0]).transition().duration(600)
                         .attr("font-size",function(d){
                             return "" +
@@ -166,52 +194,67 @@
         
                         d3.select(child).transition().duration(600)
                         .attr("r", function(d){
-                            d.value = window.innerWidth*800;
+                            d.value = window.innerWidth*500;
                             return radiusScale(d.value);
                         })
-                        .style("cursor", "pointer");  
 
-                        setTimeout(function(){ 
+                        setTimeout(function(){ // Setting timeout in order to allow transitions to take place
                             d3.select(pChild[0]).transition().duration(2)
-                            .attr("dy", -240)
+                            .attr("dy", -200)
+                            .attr("dx", function(d){ return "-" + (getTextWidth(d.topic.title, 
+                            window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
+                            "px Segoe UI"))/2; })
                             .attr("visibility", "visible")
-                            d3.select(pChild[0].parentNode).append('tspan')
-                                    .attr("dy", 50)
-                                    .attr("dx", "-" + getTextWidth(pChild[0].innerHTML, 
-                                    window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
-                                    "px Segoe UI"))
+                            prevD = pChild[0].innerHTML.substring(0, pChild[0].innerHTML.length/2);
+                            prevF = window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI);
+                            for(var i = 0; i < 10; i++){
+                                pChild = pParent.children;
+                                pChild = pChild[1].children;
+                                var temp = d3.select(pChild[0].parentNode).append('tspan')
+                                    .attr("dy", 20)
+                                    .attr("dx", "-" + (iDx +
+                                    getTextWidth(prevD, 
+                                    prevF + 
+                                    "px Segoe UI")))
                                     .attr("class","temp")
                                     .attr("font-family", "Segoe UI")
-                                    .attr("font-size", window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI))
-                                    .text("1. " + news[0].url);
-                            for(var i = 1; i < 10; i++){
-                                d3.select(pChild[0].parentNode).append('tspan')
-                                    .attr("dy", 40)
-                                    .attr("dx", "-" + getTextWidth(pChild[i].innerHTML, 
-                                    window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI) + 
-                                    "px Segoe UI"))
-                                    .attr("class","temp")
+                                    .attr("font-size", window.innerWidth/(100))
+                                    .append("a")
+                                    .attr("xlink:href", news[i].url)
+                                    .attr("target", "_blank")
+                                    .text(function(d){if(news[i].url.length>60){ return "" + (i+1) + ". " + news[i].url.substring(0,57) + "...";}
+                                                      else {return "" + (i+1) + ". " + news[i].url;}})
+                                    .append("tspan")
+                                    .attr("dy", 13)
+                                    .attr("dx", function(d){if(news[i].url.length>60){ return "-" + getTextWidth("1. " +
+                                    news[i].url.substring(0,57) + "...", 
+                                    window.innerWidth/(100) + 
+                                    "px Segoe UI");}
+                                    else{return "-" + getTextWidth("1. "+news[i].url, 
+                                    window.innerWidth/(100) + 
+                                    "px Segoe UI");}})
                                     .attr("font-family", "Segoe UI")
-                                    .attr("font-size", window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*2*Math.PI))
-                                    .text("" + (i+1) + ". " + news[i].url);
+                                    .attr("font-size", window.innerWidth/(100))
+                                    .text(function(d){if(news[i].title.length>60){ prevD = "" + news[i].title.substring(0,57) + "...";return "" + news[i].title.substring(0,57) + "...";}
+                                                      else {prevD = "" + news[i].title;return "" + news[i].title;}});
+                                    prevF = window.innerWidth/(100);
+                                    iDx = 0;
                             }
                         },600);    
                 }
 
                 function simulation(){ // Moving the circles and grouping them in the middle
                     
-                    // if(sim != undefined){ sim.stop(); sim.alpha(1).restart(); }
                     sim
                         .velocityDecay(0.2)
                         .force("x", d3.forceX((window.innerWidth)/2).strength(0.075))
                         .force("y", d3.forceY(window.innerHeight/2).strength(0.175))
-                        .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }).strength(.25))
-                        .alpha(.1)
+                        .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }).strength(.4))
+                        .alpha(.2)
                         .restart()
-     
                 }
 
-                function getTextWidth(text, font) {
+                function getTextWidth(text, font) { // Relaying the width a text of 'font' font takes on the screen
                     // re-use canvas object for better performance
                     var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
                     var context = canvas.getContext("2d");
@@ -220,19 +263,16 @@
                     return metrics.width;
                 }
 
-                // Level of attraction of circles based on data value
-                function charge(d){ return Math.pow(radiusScale(d.value), 2.0) * 0.03; }
-
                 function ticked(){ // Dynamic movement of circles to one another
                     circles
-                        .attr("cx", function(d){ return d.x })
-                        .attr("cy", function(d){ return d.y })
+                        .attr("cx", function(d) { return d.x = Math.max(radiusScale(d.value), Math.min(window.innerWidth - radiusScale(d.value), d.x)); })
+                        .attr("cy", function(d) { return d.y = Math.max(radiusScale(d.value), Math.min(window.innerHeight - radiusScale(d.value), d.y)); })
                     texts
                         .attr("x", function(d){ return d.x })
                         .attr("y", function(d){ return d.y + radiusScale(d.value)/d.y })
                 }
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~END OF FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
             })();
-
         </script>
     </body>
 </html>
