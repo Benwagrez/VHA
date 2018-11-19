@@ -182,37 +182,37 @@
 
                     var prevD = "";
                     var prevF = 0;
-                    var iDx = window.innerWidth/7;
+                    var iDx = window.innerWidth/6;
                     console.log(iDx);
                     d3.select(pChild[0]).transition().duration(600)
                         .attr("font-size",function(d){
                             return "" +
-                            window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) +
+                            window.innerWidth*1.3/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) +
                             "px";
                         })
                         .attr("visibility", "hidden")
         
                         d3.select(child).transition().duration(600)
                         .attr("r", function(d){
-                            d.value = window.innerWidth*500;
+                            d.value = window.innerWidth*900;
                             return radiusScale(d.value);
                         })
 
                         setTimeout(function(){ // Setting timeout in order to allow transitions to take place
                             d3.select(pChild[0]).transition().duration(2)
-                            .attr("dy", -200)
+                            .attr("dy", -280)
                             .attr("dx", function(d){ return "-" + (getTextWidth(d.topic.title, 
-                            window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
+                            window.innerWidth*1.3/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
                             "px Segoe UI"))/2; })
                             .attr("visibility", "visible")
                             prevD = pChild[0].innerHTML.substring(0, pChild[0].innerHTML.length/2);
                             prevF = window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI);
-                            for(var i = 0; i < 10; i++){
+                            for(var i = 0; i < 8; i++){
                                 pChild = pParent.children;
                                 pChild = pChild[1].children;
-                                var temp = d3.select(pChild[0].parentNode).append('tspan')
-                                    .attr("dy", 20)
-                                    .attr("dx", "-" + (iDx +
+                                var temp = d3.select(pChild[0].parentNode).append('tspan') // Title
+                                    .attr("dy", 38)
+                                    .attr("dx", "-" + (iDx + 30 +
                                     getTextWidth(prevD, 
                                     prevF + 
                                     "px Segoe UI")))
@@ -222,21 +222,23 @@
                                     .append("a")
                                     .attr("xlink:href", news[i].url)
                                     .attr("target", "_blank")
-                                    .text(function(d){if(news[i].url.length>60){ return "" + (i+1) + ". " + news[i].url.substring(0,57) + "...";}
-                                                      else {return "" + (i+1) + ". " + news[i].url;}})
-                                    .append("tspan")
-                                    .attr("dy", 13)
-                                    .attr("dx", function(d){if(news[i].url.length>60){ return "-" + getTextWidth("1. " +
-                                    news[i].url.substring(0,57) + "...", 
+                                    .text(function(d){if(news[i].title.length>60){ return "" + news[i].title.substring(0,77) + "...";}
+                                                      else {return "" + news[i].title;}})
+                                    .append("tspan") // Source
+                                    .attr("dy", 15)
+                                    .attr("dx", function(d){if(news[i].title.length>60){ return "-" + (-30 + getTextWidth(
+                                    news[i].title.substring(0,77) + "...", 
                                     window.innerWidth/(100) + 
-                                    "px Segoe UI");}
-                                    else{return "-" + getTextWidth("1. "+news[i].url, 
+                                    "px Segoe UI"));}
+                                    else{return "-" + (-30 + getTextWidth(news[i].title, 
                                     window.innerWidth/(100) + 
-                                    "px Segoe UI");}})
+                                    "px Segoe UI"));}})
                                     .attr("font-family", "Segoe UI")
                                     .attr("font-size", window.innerWidth/(100))
-                                    .text(function(d){if(news[i].title.length>60){ prevD = "" + news[i].title.substring(0,57) + "...";return "" + news[i].title.substring(0,57) + "...";}
-                                                      else {prevD = "" + news[i].title;return "" + news[i].title;}});
+                                    .attr("font-weight", "normal")
+                                    .text(function(d){if(news[i].source.name.length>60){ prevD = "-"+news[i].source.name.substring(0,77) + "...";
+                                                      return "-" + news[i].source.name.substring(0,77) + "...";}
+                                                      else {prevD = "-"+news[i].source.name;return "-" + news[i].source.name;}});
                                     prevF = window.innerWidth/(100);
                                     iDx = 0;
                             }
