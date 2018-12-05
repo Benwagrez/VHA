@@ -91,15 +91,60 @@
                     .attr('id', function(d) { return d.query; }) // Circle ID as topic title
                     .attr("stroke", function(d){ return colorBorder(d.value); }) // Circle border
                     .attr("stroke-width", function(d) { return radiusScale(d.value)/10; }) // Circle border width
-                    .on("mousedown", function(d) {      // Circle Resize functionality
-                        if(this !== child){ // Checking if the user clicked on previously selected circle - If not --Below
+                    .on("mousedown", handleMouseDown);
+                var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
+                    .append("tspan")
+                    .attr("class", "circleText")
+                    .attr("font-family", "Segoe UI")
+                    .attr("dx",function(d){ return "-" + (getTextWidth(d.query, // Disparity in X value, to align texts
+                    (radiusScale(d.value)*Math.PI)/d.query.length + 
+                    "px Segoe UI"))/2; })
+                    .attr("dy", function(d){ return ((radiusScale(d.value)*Math.PI)/d.query.length)/4;})
+                    .attr('x', function(d) { return window.innerWidth/2; })
+                    .attr('y', function(d) { return (window.innerHeight/2); })
+                    .attr("font-size",function(d){ // Font-size based on title length and size of circle
+                        return "" +
+                        (radiusScale(d.value)*Math.PI)/d.query.length +
+                        "px";
+                    })
+                    .text(function(d){return d.query;}) // Title text within circle
+                    .on("mousedown", handleMouseDown);
+                    
+                // Starting program *** 
+                var sim = d3.forceSimulation(data)
+                    .velocityDecay(0.2)
+                    .force('charge', d3.forceManyBody().strength(5))
+                    .force("x", d3.forceX((window.innerWidth*1.1)/2).strength(0.010))
+                    .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
+                    .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }))
+                    .on("tick", ticked); 
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~  Function  ~~~~~~~~~~~~~~~||~~~~~~~~~~~~~~~  Purpose  ~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* ~~~~~~~~~~~~~~~~~~  shrinkCircle                   ||  Taking user input (mousedown) in order to       */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  shrink current enlarged circle                  */
+/* ~~~~~~~~~~~~~~~~~~  growCircle                     ||  Taking user input (mousedown) in order to       */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  grow circle that was selected                   */
+/* ~~~~~~~~~~~~~~~~~~  simulation                     ||  function designed to reset D3 simulation in     */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  order to dynamically resort circles             */
+/* ~~~~~~~~~~~~~~~~~~  getTextWidth                   ||  Returns width text element take up for styling  */
+/* ~~~~~~~~~~~~~~~~~~                                 ||  purposes                                        */
+/* ~~~~~~~~~~~~~~~~~~  Ticked                         ||  Dynamically moves the circles under simulation  */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+                function handleMouseDown(d){      // Circle Resize functionality
+                    var ppParent = this.parentNode; // Place holders for text click
+                    var ppChild = ppParent.children; // -
+                    if(ppChild.length==1){ppParent = ppParent.parentNode; ppChild = ppParent.children;}
+                    var pHolder =ppChild[0]; // -
+                        if(pHolder !== child){ // Checking if the user clicked on previously selected circle - If not --Below
                             if(typeof pChild  !== "undefined"){ // Check if there was previous selection
                                 shrinkCircle(d); // If so shrink previous circle
                             }
-                            child = this; // Assigning variables based on selected circle
-                            pParent = this.parentNode; // -
+                            child = pHolder; // Assigning variables based on selected circle
+                            pParent = pHolder.parentNode; // -
                             pChild = pParent.children; // pChild defined twice to identify tspans (text not very important)
-                            pChild = pChild[1].children // -
+                            pChild = pChild[1].children; // -
                             pChildT = pChild[0].innerHTML; // -
                             pChildTS = pChild[0].getAttribute("font-size"); // -
                             pChildS = child.getAttribute("value"); // -
@@ -107,7 +152,7 @@
                             var url='https://newsapi.org/v2/everything?' + // GOOGLE NEWS API DATA PULL HERE
                                 'q='+pChildT+'&' +
                                 'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
-                                'sources=abc-news,cbs-news,cnn,fox-news,msnbc,nbc-news,the-new-yourk-times,usa-today,'+
+                                'sources=abc-news,cbs-news,cnn,fox-news,msnbc,nbc-news,the-new-york-times,usa-today,'+
                                 'the-wall-street-journal,washing-post,bloomberg,vice-news,the-huffington-post,newsweek,time,the-guardian,google-news' +
                                 'sortBy=popularity&' +
                                 'domain=npr.org' +
@@ -134,46 +179,9 @@
                             pChildS = undefined;
                             simulation(); // Simulate to restore circle positions
                         }   
-                    })
-                var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
-                    .append("tspan")
-                    .attr("class", "circleText")
-                    .attr("font-family", "Segoe UI")
-                    .attr("dx",function(d){ return "-" + (getTextWidth(d.query, // Disparity in X value, to align texts
-                    (radiusScale(d.value)*Math.PI)/d.query.length + 
-                    "px Segoe UI"))/2; })
-                    .attr("dy", function(d){ return ((radiusScale(d.value)*Math.PI)/d.query.length)/4;})
-                    .attr('x', function(d) { return window.innerWidth/2; })
-                    .attr('y', function(d) { return (window.innerHeight/2); })
-                    .attr("font-size",function(d){ // Font-size based on title length and size of circle
-                        return "" +
-                        (radiusScale(d.value)*Math.PI)/d.query.length +
-                        "px";
-                    })
-                    .text(function(d){return d.query;}); // Title text within circle
-                    
-                // Starting program *** 
-                var sim = d3.forceSimulation(data)
-                    .velocityDecay(0.2)
-                    .force('charge', d3.forceManyBody().strength(5))
-                    .force("x", d3.forceX((window.innerWidth*1.1)/2).strength(0.010))
-                    .force("y", d3.forceY(window.innerHeight/2).strength(0.02))
-                    .force("collide", d3.forceCollide().radius(function(d) { return radiusScale(d.value) + 10; }))
-                    .on("tick", ticked); 
+                        event.stopImmediatePropagation();
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* ~~~~~~~~~~~~~~~~~~~~~~~~  Function  ~~~~~~~~~~~~~~~||~~~~~~~~~~~~~~~  Purpose  ~~~~~~~~~~~~~~~~~~~~~~~~*/
-/* ~~~~~~~~~~~~~~~~~~  shrinkCircle                   ||  Taking user input (mousedown) in order to       */
-/* ~~~~~~~~~~~~~~~~~~                                 ||  shrink current enlarged circle                  */
-/* ~~~~~~~~~~~~~~~~~~  growCircle                     ||  Taking user input (mousedown) in order to       */
-/* ~~~~~~~~~~~~~~~~~~                                 ||  grow circle that was selected                   */
-/* ~~~~~~~~~~~~~~~~~~  simulation                     ||  function designed to reset D3 simulation in     */
-/* ~~~~~~~~~~~~~~~~~~                                 ||  order to dynamically resort circles             */
-/* ~~~~~~~~~~~~~~~~~~  getTextWidth                   ||  Returns width text element take up for styling  */
-/* ~~~~~~~~~~~~~~~~~~                                 ||  purposes                                        */
-/* ~~~~~~~~~~~~~~~~~~  Ticked                         ||  Dynamically moves the circles under simulation  */
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
+                }
 
                 function shrinkCircle(d){ // To shrink the Circle to original size
                     var textChild = pChild[0];
