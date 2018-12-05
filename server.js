@@ -34,6 +34,10 @@ property: 'news',
 //                                 }); 
 /*-----------------HTTP WEB SERVER BELOW--------------------*/
 
+var http = require('http');
+var fs = require('fs');
+
+const PORT=process.env.PORT
 
 fs.readFile('./index.html', function (err, html) {
 
