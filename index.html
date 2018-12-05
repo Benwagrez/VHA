@@ -111,6 +111,7 @@
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  FUNCTIONS BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~  Function  ~~~~~~~~~~~~~~~||~~~~~~~~~~~~~~~  Purpose  ~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* ~~~~~~~~~~~~~~~~~~  handle Mouse Down              ||  Event handler initiating shrink and grow circle */
 /* ~~~~~~~~~~~~~~~~~~  shrinkCircle                   ||  Taking user input (mousedown) in order to       */
 /* ~~~~~~~~~~~~~~~~~~                                 ||  shrink current enlarged circle                  */
 /* ~~~~~~~~~~~~~~~~~~  growCircle                     ||  Taking user input (mousedown) in order to       */
@@ -140,17 +141,17 @@
                             pChildS = child.getAttribute("value"); // -
                             pChildT = pChildT.replace("#","");
                             var url='https://newsapi.org/v2/everything?' + // GOOGLE NEWS API DATA PULL HERE
-                                'q='+pChildT+'&' +
-                                'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
-                                'sources=abc-news,cbs-news,cnn,fox-news,msnbc,nbc-news,the-new-york-times,usa-today,'+
-                                'the-wall-street-journal,washing-post,bloomberg,vice-news,the-huffington-post,newsweek,time,the-guardian,google-news' +
-                                'sortBy=popularity&' +
-                                'domain=npr.org' +
-                                'language=en&' +
-                                'pageSize=100&' +
-                                'apiKey=af2c24b426a34038888bd4e88d263052';
-                            var req = new Request(url);
-                            fetch(req)
+                                'q='+pChildT+'&' + // Querying for bubble title
+                                'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' + // From last 30 days
+                                'sources=abc-news,cbs-news,cnn,fox-news,msnbc,nbc-news,the-new-york-times,usa-today,'+ // List of sources whitelisted
+                                'the-wall-street-journal,washing-post,bloomberg,vice-news,the-huffington-post,newsweek,time,the-guardian,google-news' + // - 
+                                'sortBy=popularity&' + // Sorted by total views
+                                'domain=npr.org' + // Whitelisted one more, exception
+                                'language=en&' + // English results only
+                                'pageSize=100&' + // 100 results to query through
+                                'apiKey=af2c24b426a34038888bd4e88d263052'; // REQ API KEY FOR GOOGLE NEWS API
+                            var req = new Request(url); // Compiling request
+                            fetch(req) // Fetching request
                                 .then(response => response.json())
                                 .then(function(post){ // WAIT FOR DATA: ERROR HERE IF MAX LIMIT REACHED
                                     news = post.articles;
@@ -169,7 +170,7 @@
                             pChildS = undefined;
                             simulation(); // Simulate to restore circle positions
                         }   
-                        event.stopImmediatePropagation();
+                        event.stopImmediatePropagation(); // Stopped immediately queued events, prevent auto grow and shrink
 
                 }
 
