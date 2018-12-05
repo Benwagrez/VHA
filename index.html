@@ -34,6 +34,17 @@
         <script>
 
             (function() {
+                // var data;
+                // var url='https://newsapi.org/v2/top-headlines?country=us&apiKey=af2c24b426a34038888bd4e88d263052'; // GOOGLE NEWS API DATA PULL HERE
+                //                 // 'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
+                //                 // 'apiKey=af2c24b426a34038888bd4e88d263052';
+                //             var req = new Request(url);
+                //             fetch(req)
+                //                 .then(response => response.json())
+                //                 .then(function(post){ // WAIT FOR DATA: ERROR HERE IF MAX LIMIT REACHED
+                //                     data = post.articles;
+                //                     console.log(post.articles);
+                //                 }); 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  VARIABLES BELOW ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -52,7 +63,7 @@
                 data = data.default.rankedList[1].rankedKeyword; 
 
                 // RadiusScale: Radius of Circle based on data value
-                var radiusScale = d3.scaleSqrt().domain([1,100000]).range([(Math.sqrt(window.innerHeight*window.innerWidth))/30,(Math.sqrt(window.innerHeight*window.innerWidth)/7)])
+                var radiusScale = d3.scaleSqrt().domain([1,90000]).range([(Math.sqrt(window.innerHeight*window.innerWidth))/30,(Math.sqrt(window.innerHeight*window.innerWidth)/7)])
 
                 // Color && ColorBorder: colors of circles and their borders based on scheme
                 var color = d3.scaleQuantize().domain([1,20000]).range(['#638CA6','#A3D39C','#17A697','#D4A1D2','#E45F56','#D93240','#F9AC3D','#758C33']); // d3.scale.category20b();
@@ -77,7 +88,7 @@
                     .attr('cx', function(d) { return window.innerWidth/2; }) 
                     .attr('cy', function(d) { return window.innerHeight/2; })
                     .attr("fill", function(d){ return color(d.value); }) // Fill color
-                    .attr('id', function(d) { return d.topic.title; }) // Circle ID as topic title
+                    .attr('id', function(d) { return d.query; }) // Circle ID as topic title
                     .attr("stroke", function(d){ return colorBorder(d.value); }) // Circle border
                     .attr("stroke-width", function(d) { return radiusScale(d.value)/10; }) // Circle border width
                     .on("mousedown", function(d) {      // Circle Resize functionality
@@ -92,10 +103,16 @@
                             pChildT = pChild[0].innerHTML; // -
                             pChildTS = pChild[0].getAttribute("font-size"); // -
                             pChildS = child.getAttribute("value"); // -
+                            pChildT = pChildT.replace("#","");
                             var url='https://newsapi.org/v2/everything?' + // GOOGLE NEWS API DATA PULL HERE
                                 'q='+pChildT+'&' +
                                 'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
+                                'sources=abc-news,cbs-news,cnn,fox-news,msnbc,nbc-news,the-new-yourk-times,usa-today,'+
+                                'the-wall-street-journal,washing-post,bloomberg,vice-news,the-huffington-post,newsweek,time,the-guardian,google-news' +
                                 'sortBy=popularity&' +
+                                'domain=npr.org' +
+                                'language=en&' +
+                                'pageSize=100&' +
                                 'apiKey=af2c24b426a34038888bd4e88d263052';
                             var req = new Request(url);
                             fetch(req)
@@ -122,18 +139,18 @@
                     .append("tspan")
                     .attr("class", "circleText")
                     .attr("font-family", "Segoe UI")
-                    .attr("dx",function(d){ return "-" + (getTextWidth(d.topic.title, // Disparity in X value, to align texts
-                    (radiusScale(d.value)*Math.PI)/d.topic.title.length + 
+                    .attr("dx",function(d){ return "-" + (getTextWidth(d.query, // Disparity in X value, to align texts
+                    (radiusScale(d.value)*Math.PI)/d.query.length + 
                     "px Segoe UI"))/2; })
-                    .attr("dy", function(d){ return ((radiusScale(d.value)*Math.PI)/d.topic.title.length)/4;})
+                    .attr("dy", function(d){ return ((radiusScale(d.value)*Math.PI)/d.query.length)/4;})
                     .attr('x', function(d) { return window.innerWidth/2; })
                     .attr('y', function(d) { return (window.innerHeight/2); })
                     .attr("font-size",function(d){ // Font-size based on title length and size of circle
                         return "" +
-                        (radiusScale(d.value)*Math.PI)/d.topic.title.length +
+                        (radiusScale(d.value)*Math.PI)/d.query.length +
                         "px";
                     })
-                    .text(function(d){return d.topic.title;}); // Title text within circle
+                    .text(function(d){return d.query;}); // Title text within circle
                     
                 // Starting program *** 
                 var sim = d3.forceSimulation(data)
@@ -174,15 +191,15 @@
                         setTimeout(function(){ 
                             d3.select(textChild).transition().duration(2)
                             .attr("dy", 0)
-                            .attr("dx",function(d){ return "-" + (getTextWidth(d.topic.title, 
-                            (radiusScale(d.value)*Math.PI)/d.topic.title.length + 
+                            .attr("dx",function(d){ return "-" + (getTextWidth(d.query, 
+                            (radiusScale(d.value)*Math.PI)/d.query.length + 
                             "px Segoe UI"))/2; })
                             .attr("visibility", "visible")
                         },200);         
                 }
 
                 function growCircle(d){ // To Grow the Circle to enlarged size
-                    var y = 8; if((window.innerHeight*window.innerWidth)<200000) y = 6;
+                    var y = 8;
                     console.log(window.innerHeight*window.innerWidth);
                     console.log(window.visualViewport.height);
                     console.log(document.body.clientWidth);
@@ -191,11 +208,12 @@
                     var prevD = "";
                     var prevF = 0;
                     var iDx = radiusScale(window.innerWidth)*5.5;
+                    var source = new Array();
                     console.log(iDx);
                     d3.select(pChild[0]).transition().duration(600)
                         .attr("font-size",function(d){
                             return "" +
-                            window.innerWidth*1.3/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) +
+                            window.innerWidth*1.3/(Math.sqrt(d.query.length)*Math.PI*Math.PI) +
                             "px";
                         })
                         .attr("visibility", "hidden") // Making invisible for transition
@@ -209,25 +227,26 @@
                         setTimeout(function(){ // Setting timeout in order to allow transitions to take place
                             d3.select(pChild[0]).transition().duration(2)
                             .attr("dy", -radiusScale(window.innerWidth)*6) // Moving topic to upper part of circle
-                            .attr("dx", function(d){ return "-" + (getTextWidth(d.topic.title, 
-                            window.innerWidth*1.3/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI) + 
+                            .attr("dx", function(d){ return "-" + (getTextWidth(d.query, 
+                            window.innerWidth*1.3/(Math.sqrt(d.query.length)*Math.PI*Math.PI) + 
                             "px Segoe UI"))/2; })
                             .attr("visibility", "visible") // Making visible after transition
                             prevD = pChild[0].innerHTML.substring(0, pChild[0].innerHTML.length/2); // Centering to middle of circle
-                            prevF = window.innerWidth/(Math.sqrt(d.topic.title.length)*Math.PI*Math.PI); // Topic font size
+                            prevF = window.innerWidth/(Math.sqrt(d.query.length)*Math.PI*Math.PI); // Topic font size
                             for(var i = 0; i < y; i++){
                                 pChild = pParent.children;
                                 pChild = pChild[1].children;
+                                if(!source.includes(news[i].source.name)){
                                 var temp = d3.select(pChild[0].parentNode)
                                     .append('tspan') // Title of the article
-                                        .attr("dy", (8/y)*radiusScale(window.innerWidth)/1.5) // Tab between articles
+                                        .attr("dy", radiusScale(window.innerWidth)/1.5) // Tab between articles
                                         .attr("dx", "-" + (iDx + 30 +
                                         getTextWidth(prevD, 
                                         prevF + 
                                         "px Segoe UI"))) // Previous line length
                                         .attr("class","temp") // Class temp to remove on shrink
                                         .attr("font-family", "Segoe UI") // Text type --
-                                        .attr("font-size", (8/y)*radiusScale(window.innerWidth)/(3)) // --
+                                        .attr("font-size", radiusScale(window.innerWidth)/(3)) // --
                                         .attr("font-weight", "bold") // --
                                         .append("a") // Including link to article
                                         .attr("xlink:href", news[i].url) // link href
@@ -235,36 +254,40 @@
                                         .text(function(d){if(news[i].title.length>70){ return "" + news[i].title.substring(0,70);}
                                                         else {return "" + news[i].title;}})
                                     .append("tspan") // Wrapping tspan if needed
-                                        .attr("dy", (8/y)*radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
+                                        .attr("dy", radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
                                         .attr("dx", function(d){if(news[i].title.length>70){ return "-" + getTextWidth(
                                         news[i].title.substring(0,70),  "bold " +
-                                        (8/y)*radiusScale(window.innerWidth)/(3) + 
+                                        radiusScale(window.innerWidth)/(3) + 
                                         "px Segoe UI");}
                                         else{return "-" + getTextWidth(news[i].title,  "bold " +
                                         radiusScale(window.innerWidth)/(3) + 
                                         "px Segoe UI");}}) // Previous line length
                                         .attr("font-family", "Segoe UI") // Text type -- 
-                                        .attr("font-size", (8/y)*radiusScale(window.innerWidth)/(3)) // --
+                                        .attr("font-size", radiusScale(window.innerWidth)/(3)) // --
                                         .attr("font-weight", "bold") // --
                                         .text(function(d){if(news[i].title.length>70){
                                                         return news[i].title.substring(70);}
                                                         else {return "";}})
                                     .append("tspan") // Source tabbed 30 pixels with a dash
-                                        .attr("dy", (8/y)*radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
+                                        .attr("dy", radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
                                         .attr("dx", function(d){if(news[i].title.length>70){ return (30 - getTextWidth(
                                         news[i].title.substring(70),  "bold " +
-                                        (8/y)*radiusScale(window.innerWidth)/(3) + 
+                                        radiusScale(window.innerWidth)/(3) + 
                                         "px Segoe UI"));}
                                         else{return "-" + (-30 + getTextWidth(news[i].title,  "bold " +
-                                        (8/y)*radiusScale(window.innerWidth)/(3) + 
+                                        radiusScale(window.innerWidth)/(3) + 
                                         "px Segoe UI"));}}) // Previous line length
                                         .attr("font-family", "Segoe UI") // Text type --
-                                        .attr("font-size", (8/y)*radiusScale(window.innerWidth)/(3)) // --
+                                        .attr("font-size", radiusScale(window.innerWidth)/(3)) // --
                                         .attr("font-weight", "normal") // --
                                         .text(function(d){if(news[i].source.name.length>30){ prevD = "-"+news[i].source.name.substring(0,30) + "...";
                                                         return "-" + news[i].source.name.substring(0,30) + "...";}
                                                         else {prevD = "-"+news[i].source.name;return "-" + news[i].source.name;}});
-                                    prevF = (8/y)*radiusScale(window.innerWidth)/(3);
+                                        source.push(news[i].source.name);
+                                        console.log(source);
+                                }
+                                else {y++;}
+                                    prevF = radiusScale(window.innerWidth)/(3);
                                     iDx = 0;
                             }
                         },600);    

@@ -2,14 +2,18 @@
 /*-----------------API DATA EXTRAPOLATION BELOW------------*/
 
 var googleTrends = require('./lib/google-trends-api.min.js');
+var http = require('http');
+var fs = require('fs');
+
+const PORT=8080; 
 var data;
 
-googleTrends.relatedTopics({
+googleTrends.relatedQueries({
 keyword: '*',
 startTime: new Date(new Date().setDate(new Date().getDate() - 30)),
 endTime: new Date(Date.now()),
 geo: 'US',
-category: '1209',
+property: 'news',
 })
 .then((res) => {
   data = res;
@@ -18,12 +22,18 @@ category: '1209',
   console.log(err);
 })
 
+// var url='https://newsapi.org/v2/top-headlines?country=us&apiKey=af2c24b426a34038888bd4e88d263052'; // GOOGLE NEWS API DATA PULL HERE
+//                                 // 'from='+ new Date(new Date().setDate(new Date().getDate() - 30)) +'&' +
+//                                 // 'apiKey=af2c24b426a34038888bd4e88d263052';
+//                             var req = new Request(url);
+//                             fetch(req)
+//                                 .then(response => response.json())
+//                                 .then(function(post){ // WAIT FOR DATA: ERROR HERE IF MAX LIMIT REACHED
+//                                     data = post.articles;
+//                                     console.log(post.articles);
+//                                 }); 
 /*-----------------HTTP WEB SERVER BELOW--------------------*/
 
-var http = require('http');
-var fs = require('fs');
-
-const PORT=8080; 
 
 fs.readFile('./index.html', function (err, html) {
 
