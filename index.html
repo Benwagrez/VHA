@@ -80,7 +80,7 @@
                     .attr('id', function(d) { return d.query; }) // Circle ID as topic title
                     .attr("stroke", function(d){ return colorBorder(d.value); }) // Circle border
                     .attr("stroke-width", function(d) { return radiusScale(d.value)/10; }) // Circle border width
-                    .on("mousedown", handleMouseDown);
+                    .on("click", handleMouseDown);
                 var texts = elemEnter.append("text") // Initializing Text variables (Text in circle)
                     .append("tspan")
                     .attr("class", "circleText")
@@ -91,13 +91,14 @@
                     .attr("dy", function(d){ return ((radiusScale(d.value)*Math.PI)/d.query.length)/4;})
                     .attr('x', function(d) { return window.innerWidth/2; })
                     .attr('y', function(d) { return (window.innerHeight/2); })
+                    .attr('cursor','default')
                     .attr("font-size",function(d){ // Font-size based on title length and size of circle
                         return "" +
                         (radiusScale(d.value)*Math.PI)/d.query.length +
                         "px";
                     })
                     .text(function(d){return d.query;}) // Title text within circle
-                    .on("mousedown", handleMouseDown);
+                    .on("click", handleMouseDown);
                     
                 // Starting program *** 
                 var sim = d3.forceSimulation(data)
