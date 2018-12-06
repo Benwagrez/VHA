@@ -209,12 +209,12 @@
         
                         d3.select(child).transition().duration(600)
                         .attr("r", function(d){
-                            d.value = window.innerWidth*900;
+                            d.value = window.innerWidth*700;
                             return radiusScale(d.value);
                         })
                     
                     var z = 8 - 4/(radiusScale(d.value)/100) // y value is calculated based on screen size, for mobile usability to reduce amount of headlines
-                    var y = z; // -
+                    var y = z-1; // -
                     var prevD = "";
                     var prevF = 0;
                     var iDx = (z/8)*radiusScale(window.innerWidth)*5.5;
@@ -251,12 +251,12 @@
                                         .append("a") // Including link to article
                                         .attr("xlink:href", news[i].url) // link href
                                         .attr("target", "_blank") // link to be opened in another tab
-                                        .text(function(d){if(news[i].title.length>(z/8)*70){ return "" + news[i].title.substring(0,(z/8)*70);}
+                                        .text(function(d){if(news[i].title.length>(z/8)*60){ return "" + news[i].title.substring(0,(z/8)*60);}
                                                         else {return "" + news[i].title;}})
                                     .append("tspan") // Wrapping tspan if needed
                                         .attr("dy", Math.sqrt(Math.sqrt(8/z))*radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
-                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*70){ return "-" + getTextWidth(
-                                        news[i].title.substring(0,(z/8)*70),  "bold " +
+                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*60){ return "-" + getTextWidth(
+                                        news[i].title.substring(0,(z/8)*60),  "bold " +
                                         Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3) + 
                                         "px Helvetica");}
                                         else{return "-" + getTextWidth(news[i].title,  "bold " +
@@ -265,15 +265,15 @@
                                         .attr("font-family", "Helvetica") // Text type -- 
                                         .attr("font-size", Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3)) // --
                                         .attr("font-weight", "bold") // --
-                                        .text(function(d){if(news[i].title.length>(z/8)*140){
-                                                        return news[i].title.substring((z/8)*70,(z/8)*140);}
-                                                        else if(news[i].title.length>(z/8)*70){
-                                                        return news[i].title.substring((z/8)*70);}
+                                        .text(function(d){if(news[i].title.length>(z/8)*120){
+                                                        return news[i].title.substring((z/8)*60,(z/8)*120);}
+                                                        else if(news[i].title.length>(z/8)*60){
+                                                        return news[i].title.substring((z/8)*60);}
                                                         else{return "";}})
                                     .append("tspan") // Wrapping tspan 2.0 if needed
                                         .attr("dy", Math.sqrt(Math.sqrt(8/z))*radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
-                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*140){ return "-" + getTextWidth(
-                                        news[i].title.substring((z/8)*70,(z/8)*140),  "bold " +
+                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*120){ return "-" + getTextWidth(
+                                        news[i].title.substring((z/8)*60,(z/8)*120),  "bold " +
                                         Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3) + 
                                         "px Helvetica");}
                                         else{return "-" + getTextWidth(news[i].title,  "bold " +
@@ -282,17 +282,17 @@
                                         .attr("font-family", "Helvetica") // Text type -- 
                                         .attr("font-size", Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3)) // --
                                         .attr("font-weight", "bold") // --
-                                        .text(function(d){if(news[i].title.length>(z/8)*140){
-                                                        return news[i].title.substring((z/8)*140);}
+                                        .text(function(d){if(news[i].title.length>(z/8)*120){
+                                                        return news[i].title.substring((z/8)*120);}
                                                         else {return "";}})
                                     .append("tspan") // Source tabbed 30 pixels with a dash
                                         .attr("dy", Math.sqrt(Math.sqrt(8/z))*radiusScale(window.innerWidth)/2.5) // Tab between lines in article entries
-                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*140){return(30 - getTextWidth(
-                                        news[i].title.substring((z/8)*140),  "bold " +
+                                        .attr("dx", function(d){if(news[i].title.length>(z/8)*120){return(30 - getTextWidth(
+                                        news[i].title.substring((z/8)*120),  "bold " +
                                         Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3) + 
                                         "px Helvetica"));}
-                                        else if(news[i].title.length>(z/8)*70){ return (30 - getTextWidth(
-                                        news[i].title.substring((z/8)*70),  "bold " +
+                                        else if(news[i].title.length>(z/8)*60){ return (30 - getTextWidth(
+                                        news[i].title.substring((z/8)*60),  "bold " +
                                         Math.sqrt(8/z)*radiusScale(window.innerWidth)/(3) + 
                                         "px Helvetica"));}
                                         else{return "-" + (-30 + getTextWidth(news[i].title,  "bold " +
