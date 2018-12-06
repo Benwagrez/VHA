@@ -5,7 +5,7 @@ var googleTrends = require('./lib/google-trends-api.min.js');
 var http = require('http');
 var fs = require('fs');
 
-const PORT=process.env.PORT;
+const PORT=8080;
 var data;
 
 googleTrends.relatedQueries({
