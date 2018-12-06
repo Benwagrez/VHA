@@ -5,12 +5,12 @@ var googleTrends = require('./lib/google-trends-api.min.js');
 var http = require('http');
 var fs = require('fs');
 
-const PORT=8080;
+const PORT=process.env.PORT;
 var data;
 
 googleTrends.relatedQueries({
 keyword: '*',
-startTime: new Date(new Date().setDate(new Date().getDate() - 30)),
+startTime: new Date(new Date().setDate(new Date().getDate() - 7)),
 endTime: new Date(Date.now()),
 geo: 'US',
 property: 'news',
